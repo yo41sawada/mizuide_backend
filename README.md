@@ -44,4 +44,16 @@ docker exec -it petclinic-build /bin/bash -c 'cd /workspaces/mizuide_backend;./m
 
 ### CORS認証について
 各contotollerについて、CORSを設定しており、デフォルトでは開発環境で動かすことを想定してlocalhost:3000としています。
-変更したい場合は[application.properties](src/main/resources/application.properties)を開き`front_fqdn`の値を編集してください。
+変更したい場合は[application.properties](src/main/resources/application.properties)を開き`front_url`の値を編集してください。
+
+### Twitter認証について
+本アプリケーションでは、Twitterを使用して認証を行うことが可能です。
+有効にする場合は、前準備として、twitterAPIの登録が必要となりますので、以下のページを参照して作成してください。
+https://syncer.jp/Web/API/Twitter/REST_API/
+※アプリ作成時に設定できるコールバックURLは、`http://localhost:3000/login`としてください
+
+作成が完了したら、[application.properties](src/main/resources/application.properties)を開き、以下のように設定値を変更します。
+```
+APIKey = Consumer Key (API Key)の値
+APIKeySecret = Consumer Secret (API Secret)の値
+```
