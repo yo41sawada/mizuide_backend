@@ -15,26 +15,28 @@
  */
 package org.springframework.samples.petclinic.owner;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
-import org.springframework.util.StringUtils;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.*;
-
 import javax.validation.Valid;
-import java.util.Collection;
+
+import org.springframework.samples.petclinic.owner.request.NewPetsRequest;
+import org.springframework.samples.petclinic.owner.response.InitOwnersResponse;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * @author Juergen Hoeller
  * @author Ken Krebs
  * @author Arjen Poutsma
  */
-@Controller
+
+@RestController
 @RequestMapping("/owners/{ownerId}")
 class PetController {
-
-	private static final String VIEWS_PETS_CREATE_OR_UPDATE_FORM = "pets/createOrUpdatePetForm";
 
 	private final OwnerRepository owners;
 
@@ -42,68 +44,35 @@ class PetController {
 		this.owners = owners;
 	}
 
-	@ModelAttribute("types")
-	public Collection<PetType> populatePetTypes() {
-		return this.owners.findPetTypes();
-	}
-
-	@ModelAttribute("owner")
-	public Owner findOwner(@PathVariable("ownerId") int ownerId) {
-		return this.owners.findById(ownerId);
-	}
-
-	@InitBinder("owner")
-	public void initOwnerBinder(WebDataBinder dataBinder) {
-		dataBinder.setDisallowedFields("id");
-	}
-
-	@InitBinder("pet")
-	public void initPetBinder(WebDataBinder dataBinder) {
-		dataBinder.setValidator(new PetValidator());
-	}
-
-	@GetMapping("/pets/new")
-	public String initCreationForm(Owner owner, ModelMap model) {
-		Pet pet = new Pet();
-		owner.addPet(pet);
-		model.put("pet", pet);
-		return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
+	@GetMapping("/")
+	@ResponseBody
+	public InitOwnersResponse init(@PathVariable("ownerId") int ownerId) {
+		InitOwnersResponse res = new InitOwnersResponse();
+		res.setPetTypes(this.owners.findPetTypes());
+		res.setOwner(this.owners.findById(ownerId));
+		return res;
 	}
 
 	@PostMapping("/pets/new")
-	public String processCreationForm(Owner owner, @Valid Pet pet, BindingResult result, ModelMap model) {
+	public Integer processCreationForm(@RequestBody @Valid NewPetsRequest req) {
+		Owner owner = this.owners.findById(req.getOwnerId());
+		Pet pet = req.getPet();
 		if (StringUtils.hasLength(pet.getName()) && pet.isNew() && owner.getPet(pet.getName(), true) != null) {
-			result.rejectValue("name", "duplicate", "already exists");
+			throw new Error("duplicate pet name");
 		}
 		owner.addPet(pet);
-		if (result.hasErrors()) {
-			model.put("pet", pet);
-			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
-		}
-		else {
-			this.owners.save(owner);
-			return "redirect:/owners/{ownerId}";
-		}
-	}
-
-	@GetMapping("/pets/{petId}/edit")
-	public String initUpdateForm(Owner owner, @PathVariable("petId") int petId, ModelMap model) {
-		Pet pet = owner.getPet(petId);
-		model.put("pet", pet);
-		return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
+		this.owners.save(owner);
+		return owner.getId();
 	}
 
 	@PostMapping("/pets/{petId}/edit")
-	public String processUpdateForm(@Valid Pet pet, BindingResult result, Owner owner, ModelMap model) {
-		if (result.hasErrors()) {
-			model.put("pet", pet);
-			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
-		}
-		else {
-			owner.addPet(pet);
-			this.owners.save(owner);
-			return "redirect:/owners/{ownerId}";
-		}
+	public Integer processUpdateForm(@RequestBody @Valid NewPetsRequest req) {
+		System.out.println(req.getPet().getName());
+		Owner owner = this.owners.findById(req.getOwnerId());
+		owner.addPet(req.getPet());
+		this.owners.save(owner);
+		return owner.getId();
+
 	}
 
 }

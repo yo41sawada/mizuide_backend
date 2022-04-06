@@ -16,7 +16,7 @@ docker build -t spring/petclinic:1.0 .
 ### ビルド
 初回
 ```shell
-docker run --name petclinic-build -p 8080:8888 -it -v /$(pwd):/workspaces/mizuide_backend spring/petclinic:1.0 /bin/bash
+docker run --name petclinic-build -p 8888:8888 -it -v /$(pwd):/workspaces/mizuide_backend spring/petclinic:1.0 /bin/bash
 /bin/bash -c 'cd /workspaces/mizuide_backend;./mvnw package -Dmaven.test.skip=true'
 exit
 ```
@@ -27,7 +27,8 @@ docker exec -it petclinic-build /bin/bash -c 'cd /workspaces/mizuide_backend;./m
 ```
 実行完了後、target以下にjarファイルが作成される
 ### 実行
-上記ビルドコマンドを実行後に以下のコマンドを実行し、localhost:8080に接続することで、トップページが表示される。
+上記ビルドコマンドを実行後に以下のコマンドを実行することで、APIが利用できるようになる。
+（フロント側についてはフロント側のREADME.mdを参照してください）
 ```shell
 docker start petclinic-build
 docker exec -it petclinic-build /bin/bash -c 'cd /workspaces/mizuide_backend;java -jar target/*.jar'
@@ -40,3 +41,19 @@ docker start petclinic-build
 docker exec -it petclinic-build /bin/bash -c 'cd /workspaces/mizuide_backend;./mvnw spring-boot:run'
 ```
 コマンド実行後localhost:8080にアクセスすることで、現在のソースコードを反映したアプリケーションが確認できる。
+
+### CORS認証について
+各contotollerについて、CORSを設定しており、デフォルトでは開発環境で動かすことを想定してlocalhost:3000としています。
+変更したい場合は[application.properties](src/main/resources/application.properties)を開き`front_url`の値を編集してください。
+
+### Twitter認証について
+本アプリケーションでは、Twitterを使用して認証を行うことが可能です。
+有効にする場合は、前準備として、twitterAPIの登録が必要となりますので、以下のページを参照して作成してください。
+https://syncer.jp/Web/API/Twitter/REST_API/
+※アプリ作成時に設定できるコールバックURLは、`http://localhost:3000/login`としてください
+
+作成が完了したら、[application.properties](src/main/resources/application.properties)を開き、以下のように設定値を変更します。
+```
+APIKey = Consumer Key (API Key)の値
+APIKeySecret = Consumer Secret (API Secret)の値
+```
